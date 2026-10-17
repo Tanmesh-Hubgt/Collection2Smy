@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Collection</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      padding: 2rem 1rem;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.25rem;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    }
+    .img-wrapper {
+      width: 100%;
+      height: 220px;
+      background: #0b1120;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .img-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .meta {
+      padding: 0.85rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .filename {
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .copy-btn {
+      background: #3b82f6;
+      border: none;
+      color: #fff;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .copy-btn:hover {
+      background: #2563eb;
+    }
+    .status {
+      text-align: center;
+      color: #94a3b8;
+      margin-top: 3rem;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Collection2Smy Gallery</h1>
+    <p>Click "Copy URL" to grab direct image links for your code.</p>
+  </header>
+
+  <div id="status" class="status">Loading images...</div>
+  <div id="gallery" class="gallery"></div>
+
+  <script>
+    // Configuration: Match your repo details
+    const USERNAME = 'tanmesh-hubgt';
+    const REPO = 'Collection2Smy';
+    
+    // If your images are inside a subfolder, change '' to 'images' or 'assets'
+    const FOLDER_PATH = 'images'; 
+
+    const validExtensions = /\.(jpg|jpeg|png|gif|webp|svg)$/i;
+    const apiUrl = `https://api.github.com/repos/${USERNAME}/${REPO}/contents/${FOLDER_PATH}`;
+    const baseUrl = `https://${USERNAME}.github.io/${REPO}/${FOLDER_PATH ? FOLDER_PATH + '/' : ''}`;
+
+    async function loadImages() {
+      const gallery = document.getElementById('gallery');
+      const status = document.getElementById('status');
+
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error(`HTTP ${response.status}: Failed to read repo`);
+        
+        const files = await response.json();
+        const imageFiles = files.filter(file => file.type === 'file' && validExtensions.test(file.name));
+
+        if (imageFiles.length === 0) {
+          status.textContent = 'No image files found in this directory.';
+          return;
+        }
+
+        status.style.display = 'none';
+
+        imageFiles.forEach(file => {
+          const directUrl = `${baseUrl}${file.name}`;
+
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <div class="img-wrapper">
+              <img src="${directUrl}" alt="${file.name}" loading="lazy">
+            </div>
+            <div class="meta">
+              <span class="filename" title="${file.name}">${file.name}</span>
+              <button class="copy-btn" onclick="copyLink(this, '${directUrl}')">Copy URL</button>
+            </div>
+          `;
+          gallery.appendChild(card);
+        });
+
+      } catch (err) {
+        status.textContent = `Error loading images: ${err.message}. If images are in a folder, adjust FOLDER_PATH.`;
+      }
+    }
+
+    function copyLink(button, url) {
+      navigator.clipboard.writeText(url).then(() => {
+        const prev = button.textContent;
+        button.textContent = 'Copied!';
+        button.style.background = '#10b981';
+        setTimeout(() => {
+          button.textContent = prev;
+          button.style.background = '#3b82f6';
+        }, 1500);
+      });
+    }
+
+    loadImages();
+  </script>
+</body>
+</html>
